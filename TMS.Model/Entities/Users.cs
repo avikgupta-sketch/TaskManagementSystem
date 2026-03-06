@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TMS.Model.Entities
 {
-    internal class user
+    internal class Users
     {
     }
 }

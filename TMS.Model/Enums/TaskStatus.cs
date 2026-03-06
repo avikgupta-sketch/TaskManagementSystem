@@ -6,7 +6,5 @@ using System.Threading.Tasks;
 
 namespace TMS.Model.Enums
 {
-    internal class TaskStatus
-    {
-    }
+    public enum TaskStatus { Pending, InProgress, Completed }
 }
