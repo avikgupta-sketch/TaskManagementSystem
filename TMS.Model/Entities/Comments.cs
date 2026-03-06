@@ -19,5 +19,6 @@ namespace TMS.Model.Entities
         // Navigation Properties
         public TaskItem Task { get; set; }
         public Users Author { get; set; }
+        public bool IsDeleted { get; set; } = false;
     }
 }
