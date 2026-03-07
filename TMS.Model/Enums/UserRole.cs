@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace TMS.Model.Enums
 {
-    public enum UserRole { Admin, User }
-  
+    public enum UserRole
+    {
+        User = 0,
+        Admin = 1
+    }
 }

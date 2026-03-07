@@ -5,6 +5,13 @@
 
 # dotenv files
 .env
+# .NET Core
+bin/
+obj/
+
+# User-specific files
+appsettings.Development.json
+secrets.json
 
 # User-specific files
 *.rsuser
