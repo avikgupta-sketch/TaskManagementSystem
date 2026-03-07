@@ -7,25 +7,25 @@ using TaskStatus = TMS.Model.Enums.TaskStatus;
 
 namespace TMS.Model.Entities
 {
-    public class TaskItem
+    public class TaskItem :BaseEntity
     {
-        public Guid Id { get; set; } = Guid.NewGuid();
+        
         public string Title { get; set; } = string.Empty;
         public string? Description { get; set; } 
         public TaskStatus Status { get; set; } = TaskStatus.Pending;
 
-        // Foreign Keys
-        public Guid CreatedById { get; set; } // Admin ki ID
-        public Guid? AssignedToId { get; set; } // User ki ID (Nullable)
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? UpdatedAt { get; set; }
+        
+        public int CreatedByUserId { get; set; } 
+        public int AssignedToUserId { get; set; } 
+        
+       
         public DateTime? DueDate { get; set; }
-        public bool IsDeleted { get; set; } = false;
+        
 
-        // Navigation Properties
-        public Users CreatedBy { get; set; }
-        public Users AssignedTo { get; set; }
+        // Navigation
+        public User CreatedBy { get; set; }
+        public User? AssignedTo { get; set; }
 
-        public ICollection<Comments> Comments { get; set; } = new List<Comments>();
+        public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 }
