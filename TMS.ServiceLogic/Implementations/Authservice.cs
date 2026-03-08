@@ -38,7 +38,7 @@ namespace TMS.ServiceLogic.Implementations
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
                 throw new Exception("Email already registered");
 
-            // AutoMapper maps Username,Email from DTO -> User
+            // Mapping Username,Email from DTO to User
             var user = _mapper.Map<User>(request);
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
             user.Role = UserRole.User;

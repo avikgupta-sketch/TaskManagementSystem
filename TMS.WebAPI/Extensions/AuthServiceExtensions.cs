@@ -13,9 +13,9 @@ namespace TMS.WebAPI.Extensions
             this IServiceCollection services,
             IConfiguration configuration)
         {
-            // Register AuthService
+            
             services.AddScoped<IAuthService, AuthService>();
-            // Register AutoMapper with Auth profile
+            
             services.AddAutoMapper(typeof(AuthMappingProfile));  
 
             

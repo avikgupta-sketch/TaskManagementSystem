@@ -1,10 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using TMS.Contracts.Response;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TMS.Contracts.Request;
+using TMS.Contracts.Response;
 using TMS.ServiceLogic.Interface;
 
 namespace TMS.WebAPI.Controllers
 {
+    [AllowAnonymous]
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
