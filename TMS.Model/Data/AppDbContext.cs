@@ -23,9 +23,16 @@ namespace TMS.Model.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            
 
-            
+            modelBuilder.Entity<User>()
+        .Property(u => u.Role)
+        .HasConversion<string>();
+
+            modelBuilder.Entity<TaskItem>()
+                .Property(t => t.Status)
+                .HasConversion<string>();
+
+
             modelBuilder.Entity<TaskItem>()
                 .HasOne(t => t.CreatedBy)
                 .WithMany(u => u.CreatedTasks)
