@@ -16,7 +16,7 @@ namespace TMS.Model.Entities
 
         
         public int CreatedByUserId { get; set; } 
-        public int AssignedToUserId { get; set; } 
+        public int? AssignedToUserId { get; set; } 
         
        
         public DateTime? DueDate { get; set; }

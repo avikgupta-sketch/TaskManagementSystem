@@ -5,9 +5,9 @@ using TMS.Model.Entities;
 
 namespace TMS.ServiceLogic.Mappings
 {
-    public class AuthMappingProfile : Profile
+    public class MappingProfile : Profile
     {
-        public AuthMappingProfile()
+        public MappingProfile()
         {
             // RegisterRequestDto -> User
             CreateMap<RegisterRequest, User>()
@@ -21,6 +21,9 @@ namespace TMS.ServiceLogic.Mappings
                 .ForMember(dest => dest.ExpiresAt, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt =>
                     opt.MapFrom(src => src.Role.ToString()));
+
+            CreateMap<CreateTaskRequest, TaskItem>();
+            CreateMap<TaskItem, TaskResponse>();
         }
     }
 }
