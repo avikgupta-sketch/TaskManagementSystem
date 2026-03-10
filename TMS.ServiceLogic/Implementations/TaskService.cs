@@ -9,6 +9,7 @@ using TMS.Contracts.Request;
 using TMS.Model.Data;
 using TMS.Model.Entities;
 using TMS.ServiceLogic.Interface;
+using TMS.Contracts.Response;
 
 namespace TMS.ServiceLogic.Implementations
 {
@@ -28,23 +29,27 @@ namespace TMS.ServiceLogic.Implementations
         {
             if (request.AssignedToUserId.HasValue)
             {
-                var userExists = await _context.Users.AnyAsync(u => u.Id == request.AssignedToUserId.Value);
+                var userExists = await _context.Users
+                    .AnyAsync(u => u.Id == request.AssignedToUserId.Value);
 
                 if (!userExists)
-                {
-                    // If the user doesn't exist, we return null (or throw an exception)
                     return null;
-                }
             }
-            // request doesn't have AssignedToUserId, so it remains null in the entity
-            var newTask = _mapper.Map<TaskItem>(request);
 
+            var newTask = _mapper.Map<TaskItem>(request);
             newTask.CreatedByUserId = adminId;
             newTask.Status = TMS.Model.Enums.TaskStatus.Pending;
 
             _context.TaskItems.Add(newTask);
             await _context.SaveChangesAsync();
-            return newTask;
+
+            // ✅ Reload with navigation properties after save
+            var savedTask = await _context.TaskItems
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .FirstOrDefaultAsync(t => t.Id == newTask.Id);
+
+            return savedTask;
         }
 
         public async Task<bool> AssignTaskAsync(AssignTaskRequest request)
@@ -57,6 +62,73 @@ namespace TMS.ServiceLogic.Implementations
             task.AssignedToUserId = request.UserId;
             await _context.SaveChangesAsync();
             return true;
+        }
+        public async Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role)
+        {
+            var query = _context.TaskItems
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .Where(t => !t.IsDeleted);
+
+            // Admin sees all, User sees only assigned
+            if (role == "User")
+                query = query.Where(t => t.AssignedToUserId == userId);
+
+            var tasks = await query.ToListAsync();
+            return _mapper.Map<List<TaskResponse>>(tasks);
+        }
+
+        public async Task<TaskResponse> GetTaskByIdAsync(int taskId, int userId, string role)
+        {
+            var task = await _context.TaskItems
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+
+            if (task == null)
+                throw new Exception("Task not found");
+
+            // User can only see their assigned task
+            if (role == "User" && task.AssignedToUserId != userId)
+                throw new Exception("You are not authorized to view this task");
+
+            return _mapper.Map<TaskResponse>(task);
+        }
+        public async Task<TaskResponse> UpdateTaskAsync(int taskId, UpdateTaskRequest request, int userId)
+        {
+            var task = await _context.TaskItems
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+
+            // Task not found
+            if (task == null)
+                throw new Exception("Task not found");
+
+            // Ownership check — only creator admin can update ✅
+            if (task.CreatedByUserId != userId)
+                throw new Exception("You can only update tasks you created");
+
+            // Check if new AssignedToUserId exists
+            if (request.AssignedToUserId.HasValue)
+            {
+                var userExists = await _context.Users
+                    .AnyAsync(u => u.Id == request.AssignedToUserId.Value);
+                if (!userExists)
+                    throw new Exception("Assigned user not found");
+            }
+
+            // Map only updated fields
+            _mapper.Map(request, task);
+            await _context.SaveChangesAsync();
+
+            // Reload to get updated navigation properties
+            var updatedTask = await _context.TaskItems
+                .Include(t => t.CreatedBy)
+                .Include(t => t.AssignedTo)
+                .FirstOrDefaultAsync(t => t.Id == task.Id);
+
+            return _mapper.Map<TaskResponse>(updatedTask);
         }
     }
 }

@@ -15,7 +15,7 @@ namespace TMS.WebAPI.Extensions
         {
             
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<ITaskService, TaskService>();
+           
 
             services.AddAutoMapper(typeof(MappingProfile));  
 
