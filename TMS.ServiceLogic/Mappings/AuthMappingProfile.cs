@@ -9,13 +9,13 @@ namespace TMS.ServiceLogic.Mappings
     {
         public AuthMappingProfile()
         {
-            // RegisterRequestDto → User
+            // RegisterRequestDto -> User
             CreateMap<RegisterRequest, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-            // User → AuthResponseDto
+            // User -> AuthResponseDto
             CreateMap<User, AuthResponse>()
                 .ForMember(dest => dest.Token, opt => opt.Ignore())
                 .ForMember(dest => dest.ExpiresAt, opt => opt.Ignore())

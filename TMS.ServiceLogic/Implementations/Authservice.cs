@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using BCrypt.Net;
+using BC = BCrypt.Net.BCrypt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -40,7 +40,7 @@ namespace TMS.ServiceLogic.Implementations
 
             // Mapping Username,Email from DTO to User
             var user = _mapper.Map<User>(request);
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            user.PasswordHash = BC.HashPassword(request.Password);
             user.Role = UserRole.User;
 
             _context.Users.Add(user);
@@ -55,7 +55,7 @@ namespace TMS.ServiceLogic.Implementations
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
-            if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            if (user == null || !BC.Verify(request.Password, user.PasswordHash))
                 throw new Exception("Invalid email or password");
 
             return GenerateToken(user);
