@@ -52,5 +52,36 @@ namespace TMS.WebAPI.Controllers
 
             return Ok(new { message = "Task assigned successfully" });
         }
+        [HttpGet("view")]
+        public async Task<IActionResult> GetAll()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+
+            var tasks = await _taskService.GetAllTasksAsync(userId, role);
+            return Ok(tasks);
+        }
+
+        // GET /api/tasks/{id}
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+
+            var task = await _taskService.GetTaskByIdAsync(id, userId, role);
+            return Ok(task);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskRequest request)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+
+            var task = await _taskService.UpdateTaskAsync(id, request, userId);
+            return Ok(task);
+        }
+
     }
 }

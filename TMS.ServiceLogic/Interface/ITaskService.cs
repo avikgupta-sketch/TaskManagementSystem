@@ -14,5 +14,8 @@ namespace TMS.ServiceLogic.Interface
         Task<TaskItem> CreateTaskAsync(CreateTaskRequest request, int adminId);
 
         Task<bool> AssignTaskAsync(AssignTaskRequest request);
+        Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role);
+        Task<TaskResponse> GetTaskByIdAsync(int taskId, int userId, string role);
+        Task<TaskResponse> UpdateTaskAsync(int taskId, UpdateTaskRequest request, int userId);
     }
 }

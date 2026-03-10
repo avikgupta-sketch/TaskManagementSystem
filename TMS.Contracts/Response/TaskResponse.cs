@@ -12,9 +12,12 @@ namespace TMS.Contracts.Response
         public string Title { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+        public DateTime? DueDate { get; set; }
 
         public string Status { get; set; } = string.Empty;
-        public int? AssignedToId { get; set; } // We can simplify the response
+
+        public string? AssignedToUsername { get; set; }
+        public string CreatedByUsername { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }
 }
