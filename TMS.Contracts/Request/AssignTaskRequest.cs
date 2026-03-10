@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace TMS.Contracts.Request
 {
-    internal class AssignTaskRequest
+    public class AssignTaskRequest
     {
+        public int TaskId { get; set; }
+        public int UserId { get; set; }
     }
 }

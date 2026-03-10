@@ -5,17 +5,17 @@ using TMS.Model.Entities;
 
 namespace TMS.ServiceLogic.Mappings
 {
-    public class AuthMappingProfile : Profile
+    public class MappingProfile : Profile
     {
-        public AuthMappingProfile()
+        public MappingProfile()
         {
-            // RegisterRequestDto → User
+            // RegisterRequestDto -> User
             CreateMap<RegisterRequest, User>()
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore());
 
-            // User → AuthResponseDto
+            // User -> AuthResponseDto
             CreateMap<User, AuthResponse>()
                 .ForMember(dest => dest.Token, opt => opt.Ignore())
                 .ForMember(dest => dest.ExpiresAt, opt => opt.Ignore())
@@ -23,6 +23,7 @@ namespace TMS.ServiceLogic.Mappings
                     opt.MapFrom(src => src.Role.ToString()));
 
             CreateMap<CreateTaskRequest, TaskItem>();
+            CreateMap<TaskItem, TaskResponse>();
         }
     }
 }

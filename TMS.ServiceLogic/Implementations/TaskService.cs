@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,6 +26,16 @@ namespace TMS.ServiceLogic.Implementations
 
         public async Task<TaskItem> CreateTaskAsync(CreateTaskRequest request, int adminId)
         {
+            if (request.AssignedToUserId.HasValue)
+            {
+                var userExists = await _context.Users.AnyAsync(u => u.Id == request.AssignedToUserId.Value);
+
+                if (!userExists)
+                {
+                    // If the user doesn't exist, we return null (or throw an exception)
+                    return null;
+                }
+            }
             // request doesn't have AssignedToUserId, so it remains null in the entity
             var newTask = _mapper.Map<TaskItem>(request);
 
@@ -34,6 +45,18 @@ namespace TMS.ServiceLogic.Implementations
             _context.TaskItems.Add(newTask);
             await _context.SaveChangesAsync();
             return newTask;
+        }
+
+        public async Task<bool> AssignTaskAsync(AssignTaskRequest request)
+        {
+            var task = await _context.TaskItems.FindAsync(request.TaskId);
+            var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
+
+            if (task == null || !userExists) return false;
+
+            task.AssignedToUserId = request.UserId;
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }
