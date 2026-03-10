@@ -21,6 +21,8 @@ namespace TMS.ServiceLogic.Mappings
                 .ForMember(dest => dest.ExpiresAt, opt => opt.Ignore())
                 .ForMember(dest => dest.Role, opt =>
                     opt.MapFrom(src => src.Role.ToString()));
+
+            CreateMap<CreateTaskRequest, TaskItem>();
         }
     }
 }

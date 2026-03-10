@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Include="bin\Debug\net8.0\appsettings.Development.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="appsettings.Development.json" />
   </ItemGroup>
 
   <ItemGroup>

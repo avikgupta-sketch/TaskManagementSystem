@@ -25,8 +25,8 @@ namespace TMS.Model.Data
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<User>()
-        .Property(u => u.Role)
-        .HasConversion<string>();
+                .Property(u => u.Role)
+                .HasConversion<string>();
 
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.Status)

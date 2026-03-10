@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TMS.ServiceLogic.Interface
+namespace TMS.Contracts.Request
 {
-    internal class Class1
+    internal class AssignTaskRequest
     {
     }
 }
