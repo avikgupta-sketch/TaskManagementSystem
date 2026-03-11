@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 using TMS.Model.Data;
+using TMS.ServiceLogic.Implementation;
 using TMS.ServiceLogic.Implementations;
 using TMS.ServiceLogic.Interface;
 using TMS.WebAPI.Extensions;
@@ -47,6 +48,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagementConnectionString")));
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
 
 

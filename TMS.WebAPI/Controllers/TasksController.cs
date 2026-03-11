@@ -27,7 +27,7 @@ namespace TMS.WebAPI.Controllers
 
         [HttpPost("create")]
         [Authorize(Roles = "Admin")] // Only Admins can create
-        public async Task<IActionResult> Create(CreateTaskRequest request)
+        public async Task<IActionResult> Create([FromBody] CreateTaskRequest request)
         {
             // Extract Admin ID from JWT Claim
             var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
@@ -45,7 +45,7 @@ namespace TMS.WebAPI.Controllers
 
         [HttpPost("assign")]
         [Authorize(Roles = "Admin")] // Only Admins can assign
-        public async Task<IActionResult> Assign(AssignTaskRequest request)
+        public async Task<IActionResult> Assign([FromBody] AssignTaskRequest request)
         {
             var success = await _taskService.AssignTaskAsync(request);
             if (!success) return BadRequest("Task or User not found.");
