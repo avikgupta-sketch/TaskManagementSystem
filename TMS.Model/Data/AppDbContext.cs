@@ -44,6 +44,7 @@ namespace TMS.Model.Data
                 .HasOne(t => t.AssignedTo)
                 .WithMany(u => u.AssignedTasks)
                 .HasForeignKey(t => t.AssignedToUserId)
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             

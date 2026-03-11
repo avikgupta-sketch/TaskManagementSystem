@@ -19,7 +19,10 @@ namespace TMS.ServiceLogic.Mappings
             CreateMap<User, AuthResponse>();
                 
 
-            CreateMap<CreateTaskRequest, TaskItem>();
+            
+                CreateMap<CreateTaskRequest, TaskItem>()
+    .ForMember(dest => dest.AssignedToUserId,
+               opt => opt.MapFrom(src => src.AssignedToUserId));
             CreateMap<TaskItem, TaskResponse>()
             .ForMember(dest => dest.CreatedByUsername,
                 opt => opt.MapFrom(src => src.CreatedBy.Username))
@@ -31,7 +34,18 @@ namespace TMS.ServiceLogic.Mappings
             .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
             .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
+
+
+            CreateMap<Comment, CommentResponse>()
+                .ForMember(dest => dest.AuthorName,
+                opt => opt.MapFrom(src => src.Author.Username));  
+
+            // CreateCommentRequest -> Comment
+            CreateMap<CreateCommentRequest, Comment>()
+                .ForMember(dest => dest.UserId, opt => opt.Ignore())
+                .ForMember(dest => dest.TaskItemId, opt => opt.Ignore());
         }
+
 
     }
 }

@@ -52,7 +52,7 @@ namespace TMS.Model.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("TMS.Model.Entities.TaskItem", b =>
@@ -95,7 +95,7 @@ namespace TMS.Model.Migrations
 
                     b.HasIndex("CreatedByUserId");
 
-                    b.ToTable("TaskItems");
+                    b.ToTable("TaskItems", (string)null);
                 });
 
             modelBuilder.Entity("TMS.Model.Entities.User", b =>
@@ -130,7 +130,7 @@ namespace TMS.Model.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("TMS.Model.Entities.Comment", b =>
