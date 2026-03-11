@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Azure.Core;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -6,10 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TMS.Contracts.Request;
+using TMS.Contracts.Response;
 using TMS.Model.Data;
 using TMS.Model.Entities;
 using TMS.ServiceLogic.Interface;
-using TMS.Contracts.Response;
 
 namespace TMS.ServiceLogic.Implementations
 {
@@ -23,7 +24,6 @@ namespace TMS.ServiceLogic.Implementations
             _context = context;
             _mapper = mapper;
         }
-
 
         public async Task<TaskItem> CreateTaskAsync(CreateTaskRequest request, int adminId)
         {
@@ -81,9 +81,9 @@ namespace TMS.ServiceLogic.Implementations
         public async Task<TaskResponse> GetTaskByIdAsync(int taskId, int userId, string role)
         {
             var task = await _context.TaskItems
-                .Include(t => t.CreatedBy)
-                .Include(t => t.AssignedTo)
-                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+                 .Include(t => t.CreatedBy)
+                 .Include(t => t.AssignedTo)
+                 .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted); 
 
             if (task == null)
                 throw new Exception("Task not found");
@@ -129,6 +129,56 @@ namespace TMS.ServiceLogic.Implementations
                 .FirstOrDefaultAsync(t => t.Id == task.Id);
 
             return _mapper.Map<TaskResponse>(updatedTask);
+        }
+
+        public async Task<TaskResponse?> UpdateTaskStatusAsync(UpdateTaskStatusRequest request, int userId, string userRole)
+        {
+
+            var task = await _context.TaskItems
+              .Include(t => t.CreatedBy)
+              .Include(t => t.AssignedTo)
+              .FirstOrDefaultAsync(t => t.Id == request.TaskId && !t.IsDeleted);
+
+            /*var task = await _context.TaskItems
+        .FirstOrDefaultAsync(t => t.Id == request.TaskId && !t.IsDeleted);*/
+
+            if (task == null) return null;
+
+            // Authorization logic stays the same but uses the DTO/Context
+            if (userRole == "Admin")
+            {
+                if (task.CreatedByUserId != userId) return null; // Or throw custom exception
+            }
+            else
+            {
+                if (task.AssignedToUserId != userId) return null;
+            }
+
+            task.Status = request.Status;
+            await _context.SaveChangesAsync();
+
+            // Return a Response DTO instead of a string
+            return _mapper.Map<TaskResponse>(task);
+        }
+
+        public async Task<string> DeleteTaskAsync(int id, int adminId)
+        {
+            // 1. Find the task (Ensure we don't try to delete something already deleted)
+            var task = await _context.TaskItems
+                .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+
+            if (task == null) return "NotFound";
+
+            // 2. Ownership Check
+            if (task.CreatedByUserId != adminId) return "Forbidden";
+
+            // 3. Soft Delete: Just update the property
+            task.IsDeleted = true;
+
+            // 4. Save changes (EF generates an UPDATE command instead of a DELETE)
+            await _context.SaveChangesAsync();
+
+            return "Success";
         }
     }
 }

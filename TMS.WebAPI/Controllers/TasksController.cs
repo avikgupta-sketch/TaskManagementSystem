@@ -83,5 +83,42 @@ namespace TMS.WebAPI.Controllers
             return Ok(task);
         }
 
+        [HttpPatch("status")]
+        public async Task<IActionResult> UpdateStatus([FromBody] UpdateTaskStatusRequest request)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var role = User.FindFirstValue(ClaimTypes.Role);
+
+            var result = await _taskService.UpdateTaskStatusAsync(request, userId, role);
+
+
+            if (result == null)
+                return StatusCode(403, new
+                {
+                    message = "Access Denied: You can only update status for tasks you created (Admin) or tasks assigned to you (User)."
+                });
+
+
+            return Ok(result);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteTask(int id)
+        {
+            // Extract the ID of the Admin currently logged in
+            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var result = await _taskService.DeleteTaskAsync(id, adminId);
+
+            return result switch
+            {
+                "Success" => Ok(new { message = "Task deleted successfully." }),
+                "Forbidden" => StatusCode(403, new { message = "Access Denied: You can only delete tasks created by you." }),
+                "NotFound" => NotFound(new { message = "Task not found." }),
+                _ => BadRequest()
+            };
+        }
+
     }
 }
