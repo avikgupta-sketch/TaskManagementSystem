@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using TMS.Contracts.Request;
 using TMS.Contracts.Response;
+using TMS.ServiceLogic.Implementations;
 using TMS.ServiceLogic.Interface;
 
 namespace TMS.API.Controllers
@@ -37,6 +38,46 @@ namespace TMS.API.Controllers
 
             var comment = await _commentService.AddCommentAsync(taskId, request, userId, role);
             return Ok(comment);
+        }
+
+        [HttpPatch]
+        public async Task<IActionResult> UpdateComment(
+         [FromRoute] int taskId,
+         [FromBody] UpdateCommentRequest request)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // We pass the taskId from the route and the whole DTO from the body
+            var result = await _commentService.UpdateCommentAsync(taskId, request, userId);
+
+            if (result == null)
+            {
+                return StatusCode(403, new
+                {
+                    message = "Access Denied: You are not the author."
+                });
+            }
+
+            return Ok(result);
+        }
+
+        // Route is inherited from [Route("api/tasks/{taskId}/comments")] at class level
+        [HttpDelete]
+        public async Task<IActionResult> DeleteComment(
+            [FromRoute] int taskId,
+            [FromBody] DeleteCommentRequest request)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var result = await _commentService.DeleteCommentAsync(taskId, request, userId);
+
+            return result switch
+            {
+                "Success" => Ok(new { message = "Comment deleted successfully (Soft Delete)." }),
+                "Forbidden" => StatusCode(403, new { message = "Access Denied: You cannot delete this comment." }),
+                "NotFound" => NotFound(new { message = "Comment not found or already deleted." }),
+                _ => BadRequest()
+            };
         }
     }
 }
