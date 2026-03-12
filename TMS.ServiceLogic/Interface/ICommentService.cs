@@ -7,6 +7,10 @@ namespace TMS.ServiceLogic.Interface
     {
         Task<CommentResponse> AddCommentAsync(int taskId, CreateCommentRequest request, int userId, string role);
         Task<List<CommentResponse>> GetCommentsByTaskAsync(int taskId, int userId, string role);
+
+        Task<CommentResponse?> UpdateCommentAsync(int taskId, UpdateCommentRequest request, int userId);
+
+        Task<string> DeleteCommentAsync(int taskId, DeleteCommentRequest request, int userId);
     }
 }
 

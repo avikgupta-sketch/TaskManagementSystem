@@ -59,6 +59,8 @@ namespace TMS.ServiceLogic.Implementation
             var task = await _context.TaskItems
                 .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
 
+
+
             // Task not found
             if (task == null)
                 throw new Exception("Task not found");
@@ -69,12 +71,67 @@ namespace TMS.ServiceLogic.Implementation
 
             var comments = await _context.Comments
                 .Include(c => c.Author)
-                .Where(c => c.TaskItemId == taskId)
+                .Where(c => c.TaskItemId == taskId && !c.IsDeleted)
                 .OrderBy(c => c.CreatedAt)          
                 .ToListAsync();
 
             return _mapper.Map<List<CommentResponse>>(comments);
         }
 
+        public async Task<CommentResponse?> UpdateCommentAsync(int taskId, UpdateCommentRequest request, int userId)
+        {
+
+            var task = await _context.TaskItems
+              .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+
+            // Task not found
+            if (task == null)
+                throw new Exception("Task not found");
+
+
+            // Fetch comment including the Author
+            var comment = await _context.Comments
+                .Include(c => c.Author)
+                .FirstOrDefaultAsync(c => c.Id == request.CommentId && !c.IsDeleted);
+
+            if(comment == null || comment.TaskItemId != taskId)
+            {
+                throw new Exception("Comment not found");
+            }
+
+            if (comment.UserId != userId)
+            {
+                return null;
+            }
+
+            // 3. Update the message
+            comment.Message = request.Message;
+
+            await _context.SaveChangesAsync();
+
+            return _mapper.Map<CommentResponse>(comment);
+        }
+
+        public async Task<string> DeleteCommentAsync(int taskId, DeleteCommentRequest request, int userId)
+        {
+            // 1. Fetch the comment (only if not already soft-deleted)
+            var comment = await _context.Comments
+                .FirstOrDefaultAsync(c => c.Id == request.CommentId && !c.IsDeleted);
+
+            if (comment == null) return "NotFound";
+
+            // 2. Logic Check: Does this comment belong to the taskId in the URL?
+            if (comment.TaskItemId != taskId) return "Forbidden";
+
+            // 3. Security Check: Did this user create the comment?
+            if (comment.UserId != userId) return "Forbidden";
+
+            // 4. Soft Delete
+            comment.IsDeleted = true;
+
+            await _context.SaveChangesAsync();
+
+            return "Success";
+        }
     }
 }
