@@ -4,6 +4,7 @@ using TMS.Model.Data;
 using TMS.ServiceLogic.Implementation;
 using TMS.ServiceLogic.Implementations;
 using TMS.ServiceLogic.Interface;
+using TMS.ServiceLogic.Mappings;
 using TMS.WebAPI.Extensions;
 
 
@@ -49,7 +50,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddAuthServices(builder.Configuration);
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
-
+builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 
 var app = builder.Build();

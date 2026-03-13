@@ -49,6 +49,17 @@ namespace TMS.WebAPI.Controllers
             return Ok(result);
         }
 
-       
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var result = await _authService.DeleteUserAsync(id);
+
+            return result switch
+            {
+                "Success" => Ok(new { message = "User successfully deleted." }),
+                "User not found" => NotFound(new { message = result }),
+                _ => BadRequest(new { message = result }) // Handles business rule violations
+            };
+        }
     }
 }

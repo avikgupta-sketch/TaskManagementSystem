@@ -29,7 +29,8 @@ namespace TMS.ServiceLogic.Mappings
 
             CreateMap<TaskItem, TaskResponse>()
             .ForMember(dest => dest.CreatedByUsername,
-                opt => opt.MapFrom(src => src.CreatedBy.Username))
+                opt => opt.MapFrom(src => src.CreatedBy != null
+                ? src.CreatedBy.Username : null))
             .ForMember(dest => dest.AssignedToUsername,
                     opt => opt.MapFrom(src => src.AssignedTo != null
             ? src.AssignedTo.Username : null))

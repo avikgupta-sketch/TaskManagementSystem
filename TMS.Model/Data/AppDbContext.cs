@@ -39,9 +39,12 @@ namespace TMS.Model.Data
                 .Property(u => u.Role)
                 .HasConversion<string>();
 
+
             modelBuilder.Entity<TaskItem>()
                 .Property(t => t.Status)
                 .HasConversion<string>();
+
+            modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
 
 
             modelBuilder.Entity<TaskItem>()
@@ -56,7 +59,7 @@ namespace TMS.Model.Data
                 .WithMany(u => u.AssignedTasks)
                 .HasForeignKey(t => t.AssignedToUserId)
                 .IsRequired(false)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
 
             
             modelBuilder.Entity<Comment>()
@@ -70,7 +73,7 @@ namespace TMS.Model.Data
                 .HasOne(c => c.Author)
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
         
 
     }
