@@ -9,26 +9,34 @@ namespace TMS.ServiceLogic.Mappings
     {
         public MappingProfile()
         {
-            // RegisterRequestDto -> User
+            // RegisterRequestDto  to User
             CreateMap<RegisterRequest, User>()
              .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+             
 
 
 
-            // User -> AuthResponseDto
-            CreateMap<User, AuthResponse>();
-                
+            // User to AuthResponseDto
+            CreateMap<User, AuthResponse>()
+                .ForMember(dest => dest.Role,
+                opt => opt.MapFrom(src => src.Role.ToString()));
 
-            
-                CreateMap<CreateTaskRequest, TaskItem>()
-    .ForMember(dest => dest.AssignedToUserId,
-               opt => opt.MapFrom(src => src.AssignedToUserId));
+
+
+            CreateMap<CreateTaskRequest, TaskItem>();
+
+
+
             CreateMap<TaskItem, TaskResponse>()
             .ForMember(dest => dest.CreatedByUsername,
                 opt => opt.MapFrom(src => src.CreatedBy.Username))
             .ForMember(dest => dest.AssignedToUsername,
                     opt => opt.MapFrom(src => src.AssignedTo != null
-            ? src.AssignedTo.Username : null));
+            ? src.AssignedTo.Username : null))
+            .ForMember(dest => dest.Status,
+                opt => opt.MapFrom(src => src.Status.ToString()));
+
+
             CreateMap<UpdateTaskRequest, TaskItem>()
             .ForMember(dest => dest.Status, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
@@ -40,7 +48,7 @@ namespace TMS.ServiceLogic.Mappings
                 .ForMember(dest => dest.AuthorName,
                 opt => opt.MapFrom(src => src.Author.Username));  
 
-            // CreateCommentRequest -> Comment
+            
             CreateMap<CreateCommentRequest, Comment>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
                 .ForMember(dest => dest.TaskItemId, opt => opt.Ignore());

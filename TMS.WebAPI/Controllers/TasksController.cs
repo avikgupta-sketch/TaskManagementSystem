@@ -47,10 +47,16 @@ namespace TMS.WebAPI.Controllers
         [Authorize(Roles = "Admin")] // Only Admins can assign
         public async Task<IActionResult> Assign([FromBody] AssignTaskRequest request)
         {
-            var success = await _taskService.AssignTaskAsync(request);
-            if (!success) return BadRequest("Task or User not found.");
+            var result=await _taskService.AssignTaskAsync(request);
+            return result switch
+            {
+                "Success" => Ok(new { message = "Task assigned successfully." }),
+                "AlreadyAssigned" => Conflict(new { message = "Task is already assigned to this user." }),
+                "NotFound" => NotFound(new { message = "Task or User not found." }),
+                _ => BadRequest()
 
-            return Ok(new { message = "Task assigned successfully" });
+            };
+           
         }
         [HttpGet("view")]
         public async Task<IActionResult> GetAll()
@@ -105,8 +111,11 @@ namespace TMS.WebAPI.Controllers
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteTask(int id)
+            
         {
             // Extract the ID of the Admin currently logged in
+            
+            
             var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var result = await _taskService.DeleteTaskAsync(id, adminId);
@@ -116,6 +125,8 @@ namespace TMS.WebAPI.Controllers
                 "Success" => Ok(new { message = "Task deleted successfully." }),
                 "Forbidden" => StatusCode(403, new { message = "Access Denied: You can only delete tasks created by you." }),
                 "NotFound" => NotFound(new { message = "Task not found." }),
+                "InProgress" => StatusCode(409, new { message = "Task cannot be deleted because it is currently in progress." }),
+                "Completed" => StatusCode(409, new { message = "Task cannot be deleted because it is already completed." }),
                 _ => BadRequest()
             };
         }
