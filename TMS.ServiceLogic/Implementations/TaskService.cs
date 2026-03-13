@@ -52,16 +52,19 @@ namespace TMS.ServiceLogic.Implementations
             return savedTask;
         }
 
-        public async Task<bool> AssignTaskAsync(AssignTaskRequest request)
+        public async Task<string> AssignTaskAsync(AssignTaskRequest request)
         {
+
             var task = await _context.TaskItems.FindAsync(request.TaskId);
             var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
 
-            if (task == null || !userExists) return false;
+            if (task == null || !userExists) return "Task Not found";
+            if (task.AssignedToUserId == request.UserId) return "AlreadyAssigned";
+
 
             task.AssignedToUserId = request.UserId;
             await _context.SaveChangesAsync();
-            return true;
+            return "Success";
         }
         public async Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role)
         {
@@ -105,7 +108,7 @@ namespace TMS.ServiceLogic.Implementations
             if (task == null)
                 throw new Exception("Task not found");
 
-            // Ownership check — only creator admin can update ✅
+            // Ownership check — only creator admin can update 
             if (task.CreatedByUserId != userId)
                 throw new Exception("You can only update tasks you created");
 
@@ -139,8 +142,7 @@ namespace TMS.ServiceLogic.Implementations
               .Include(t => t.AssignedTo)
               .FirstOrDefaultAsync(t => t.Id == request.TaskId && !t.IsDeleted);
 
-            /*var task = await _context.TaskItems
-        .FirstOrDefaultAsync(t => t.Id == request.TaskId && !t.IsDeleted);*/
+            
 
             if (task == null) return null;
 
@@ -171,6 +173,11 @@ namespace TMS.ServiceLogic.Implementations
 
             // 2. Ownership Check
             if (task.CreatedByUserId != adminId) return "Forbidden";
+
+            if (task.Status == TMS.Model.Enums.TaskStatus.InProgress) return "InProgress";
+
+            if (task.Status == TMS.Model.Enums.TaskStatus.Done) return "Completed";
+
 
             // 3. Soft Delete: Just update the property
             task.IsDeleted = true;

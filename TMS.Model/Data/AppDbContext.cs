@@ -6,6 +6,7 @@ using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
 using TMS.Model.Entities;
+using TMS.Model.Enums;
 
 namespace TMS.Model.Data
 {
@@ -23,6 +24,16 @@ namespace TMS.Model.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<User>().HasData(new User
+            {
+                Id = 1,
+                Username = "Gaurav",
+                Email = "gaurav@123",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("1234"),
+                Role = UserRole.SuperAdmin,
+                IsDeleted = false,
+                CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+            });
 
             modelBuilder.Entity<User>()
                 .Property(u => u.Role)

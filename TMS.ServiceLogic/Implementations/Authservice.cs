@@ -32,31 +32,31 @@ namespace TMS.ServiceLogic.Implementations
             _mapper = mapper;
         }
 
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+        public async Task<string> RegisterAsync(RegisterRequest request)
         {
             // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-                throw new Exception("Email already registered");
+                return "AlreadyRegistered";
 
             // Mapping Username,Email from DTO to User
             var user = _mapper.Map<User>(request);
             user.PasswordHash = BC.HashPassword(request.Password);
-            user.Role = UserRole.User;
+            
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return GenerateToken(user);
+            return "Success";
         }
 
-        public async Task<AuthResponse> LoginAsync(LoginRequest request)
+        public async Task<AuthResponse?> LoginAsync(LoginRequest request)
         {
             // Find user by email
             var user = await _context.Users
                 .FirstOrDefaultAsync(u => u.Email == request.Email);
 
             if (user == null || !BC.Verify(request.Password, user.PasswordHash))
-                throw new Exception("Invalid email or password");
+                return null;
 
             return GenerateToken(user);
         }
