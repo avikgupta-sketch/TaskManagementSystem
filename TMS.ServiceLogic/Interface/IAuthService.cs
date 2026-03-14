@@ -12,5 +12,7 @@ namespace TMS.ServiceLogic.Interface
     {
         Task<string> RegisterAsync(RegisterRequest request);
         Task<AuthResponse?> LoginAsync(LoginRequest request);
+
+        Task<string> DeleteUserAsync(int userId);
     }
 }

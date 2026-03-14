@@ -61,6 +61,42 @@ namespace TMS.ServiceLogic.Implementations
             return GenerateToken(user);
         }
 
+        public async Task<string> DeleteUserAsync(int userId)
+        {
+            var user = await _context.Users
+                .Include(u => u.AssignedTasks)
+                .Include(u => u.CreatedTasks)
+                .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted); // Don't find already deleted users
+
+            if (user == null) return "User not found";
+
+            // Condition 1: Check In-Progress tasks for any user
+            // We check AssignedTasks that are NOT deleted and are InProgress
+            bool hasInProgressTasks = user.AssignedTasks
+                .Any(t => !t.IsDeleted && t.Status == TMS.Model.Enums.TaskStatus.InProgress);
+
+            if (hasInProgressTasks)
+                return "Cannot delete user: They have tasks currently 'In Progress'.";
+
+            // Condition 2: Admin specific rule
+            if (user.Role == UserRole.Admin)
+            {
+                // Check if they created any tasks that aren't deleted
+                bool hasActiveCreatedTasks = user.CreatedTasks.Any(t => !t.IsDeleted);
+                if (hasActiveCreatedTasks)
+                    return "Cannot delete Admin: This admin has active tasks in the system.";
+            }
+
+
+            // SOFT DELETE happens here
+            user.IsDeleted = true;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return "Success";
+        }
+
         private AuthResponse GenerateToken(User user)
         {
             var key = new SymmetricSecurityKey(
