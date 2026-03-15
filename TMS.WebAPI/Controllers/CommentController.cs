@@ -56,21 +56,29 @@ namespace TMS.API.Controllers
         public async Task<IActionResult> UpdateComment(
          [FromRoute] int taskId,
          [FromBody] UpdateCommentRequest request)
+
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            // We pass the taskId from the route and the whole DTO from the body
-            var result = await _commentService.UpdateCommentAsync(taskId, request, userId);
-
-            if (result == null)
+            try
             {
-                return StatusCode(403, new
-                {
-                    message = "Access Denied: You are not the author."
-                });
-            }
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            return Ok(result);
+                // We pass the taskId from the route and the whole DTO from the body
+                var result = await _commentService.UpdateCommentAsync(taskId, request, userId);
+
+                if (result == null)
+                {
+                    return StatusCode(403, new
+                    {
+                        message = "Access Denied: You are not the author."
+                    });
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         

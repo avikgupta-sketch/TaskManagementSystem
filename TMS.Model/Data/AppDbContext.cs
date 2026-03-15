@@ -44,7 +44,7 @@ namespace TMS.Model.Data
                 .Property(t => t.Status)
                 .HasConversion<string>();
 
-            modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+            
 
 
             modelBuilder.Entity<TaskItem>()
@@ -74,8 +74,11 @@ namespace TMS.Model.Data
                 .WithMany(u => u.Comments)
                 .HasForeignKey(c => c.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
-        
 
-    }
+            modelBuilder.Entity<User>().HasQueryFilter(u => !u.IsDeleted);
+            modelBuilder.Entity<TaskItem>().HasQueryFilter(t => !t.IsDeleted);
+            modelBuilder.Entity<Comment>().HasQueryFilter(c => !c.IsDeleted);
+
+        }
     }
 }

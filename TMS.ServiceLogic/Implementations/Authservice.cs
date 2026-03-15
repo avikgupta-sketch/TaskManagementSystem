@@ -66,14 +66,14 @@ namespace TMS.ServiceLogic.Implementations
             var user = await _context.Users
                 .Include(u => u.AssignedTasks)
                 .Include(u => u.CreatedTasks)
-                .FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted); // Don't find already deleted users
+                .FirstOrDefaultAsync(u => u.Id == userId ); 
 
             if (user == null) return "User not found";
 
             //  Check InProgress tasks for any user and assigned task in progress or deleted
             
             bool hasInProgressTasks = user.AssignedTasks
-                .Any(t => !t.IsDeleted && t.Status == TMS.Model.Enums.TaskStatus.InProgress);
+                .Any(t=>t.Status == TMS.Model.Enums.TaskStatus.InProgress);
 
             if (hasInProgressTasks)
                 return "Cannot delete user: They have tasks currently 'In Progress'.";
@@ -82,7 +82,7 @@ namespace TMS.ServiceLogic.Implementations
             if (user.Role == UserRole.Admin)
             {
                 // Check if they created any tasks that aren't deleted
-                bool hasActiveCreatedTasks = user.CreatedTasks.Any(t => !t.IsDeleted);
+                bool hasActiveCreatedTasks = user.CreatedTasks.Any();
                 if (hasActiveCreatedTasks)
                     return "Cannot delete Admin: This admin has active tasks in the system.";
             }

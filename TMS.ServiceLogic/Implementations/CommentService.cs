@@ -28,7 +28,7 @@ namespace TMS.ServiceLogic.Implementations
         public async Task<CommentResponse> AddCommentAsync(int taskId, CreateCommentRequest request, int userId, string role)
         {
             var task = await _context.TaskItems
-                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+                .FirstOrDefaultAsync(t => t.Id == taskId );
 
             if (task == null)
                 throw new Exception("Task not found");
@@ -57,7 +57,7 @@ namespace TMS.ServiceLogic.Implementations
         public async Task<List<CommentResponse>> GetCommentsByTaskAsync(int taskId, int userId, string role)
         {
             var task = await _context.TaskItems
-                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+                .FirstOrDefaultAsync(t => t.Id == taskId );
 
 
 
@@ -71,7 +71,7 @@ namespace TMS.ServiceLogic.Implementations
 
             var comments = await _context.Comments
                 .Include(c => c.Author)
-                .Where(c => c.TaskItemId == taskId && !c.IsDeleted)
+                .Where(c => c.TaskItemId == taskId )
                 .OrderBy(c => c.CreatedAt)          
                 .ToListAsync();
 
@@ -82,7 +82,7 @@ namespace TMS.ServiceLogic.Implementations
         {
 
             var task = await _context.TaskItems
-              .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+              .FirstOrDefaultAsync(t => t.Id == taskId );
 
             // Task not found
             if (task == null)
@@ -92,7 +92,7 @@ namespace TMS.ServiceLogic.Implementations
             // Fetch comment including the Author
             var comment = await _context.Comments
                 .Include(c => c.Author)
-                .FirstOrDefaultAsync(c => c.Id == request.CommentId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == request.CommentId );
 
             if(comment == null || comment.TaskItemId != taskId)
             {
@@ -116,7 +116,7 @@ namespace TMS.ServiceLogic.Implementations
         {
             //  Fetch the comment only if not already soft deleted
             var comment = await _context.Comments
-                .FirstOrDefaultAsync(c => c.Id == request.CommentId && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == request.CommentId );
 
             if (comment == null) return "NotFound";
 

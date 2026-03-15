@@ -10,6 +10,7 @@ using TMS.Contracts.Request;
 using TMS.Contracts.Response;
 using TMS.Model.Data;
 using TMS.Model.Entities;
+using TMS.Model.Enums;
 using TMS.ServiceLogic.Interface;
 
 namespace TMS.ServiceLogic.Implementations
@@ -29,11 +30,16 @@ namespace TMS.ServiceLogic.Implementations
         {
             if (request.AssignedToUserId.HasValue)
             {
-                var userExists = await _context.Users
-                    .AnyAsync(u => u.Id == request.AssignedToUserId.Value);
+                var assignedUser = await _context.Users
+           .FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId.Value);
+                
 
-                if (!userExists)
-                    return null;
+                if (assignedUser==null)
+                    throw new Exception("Assigned user not found.");
+
+                if (assignedUser.Role != UserRole.User)
+                    throw new Exception("Tasks can only be assigned to user.");
+
             }
 
             var newTask = _mapper.Map<TaskItem>(request);
@@ -52,14 +58,18 @@ namespace TMS.ServiceLogic.Implementations
             return savedTask;
         }
 
-        public async Task<string> AssignTaskAsync(AssignTaskRequest request)
+        public async Task<string> AssignTaskAsync(AssignTaskRequest request, int adminId)
         {
 
             var task = await _context.TaskItems.FindAsync(request.TaskId);
-            var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
+            var AssignedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
+            
 
             if (task == null ) return "TaskNotFound";
-            if (!userExists) return "UserNotFound";
+            if (AssignedUser==null) return "UserNotFound";
+            if (AssignedUser.Role != UserRole.User) return "CanOnlyAssignUser";
+            
+            if (task.CreatedByUserId != adminId) return "Forbidden";
             if (task.AssignedToUserId != null) return "AlreadyAssigned";
 
 
@@ -69,10 +79,11 @@ namespace TMS.ServiceLogic.Implementations
         }
         public async Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role)
         {
-            var query = _context.TaskItems
+            IQueryable<TaskItem> query = _context.TaskItems
                 .Include(t => t.CreatedBy)
-                .Include(t => t.AssignedTo)
-                .Where(t => !t.IsDeleted);
+                .Include(t => t.AssignedTo);
+                
+                
 
             // Admin sees all, User sees only assigned
             if (role == "User")
@@ -103,7 +114,7 @@ namespace TMS.ServiceLogic.Implementations
             var task = await _context.TaskItems
                 .Include(t => t.CreatedBy)
                 .Include(t => t.AssignedTo)
-                .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted);
+                .FirstOrDefaultAsync(t => t.Id == taskId );
 
             // Task not found
             if (task == null)
@@ -116,10 +127,12 @@ namespace TMS.ServiceLogic.Implementations
             // Check if new AssignedToUserId exists
             if (request.AssignedToUserId.HasValue)
             {
-                var userExists = await _context.Users
-                    .AnyAsync(u => u.Id == request.AssignedToUserId.Value);
-                if (!userExists)
+                var AssignedUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId.Value);
+                if (AssignedUser==null)
                     throw new Exception("Assigned user not found");
+                if (AssignedUser.Role != UserRole.User)
+                    throw new Exception("Task can only be assigned to user.");
             }
 
             // Map only updated fields
@@ -141,7 +154,7 @@ namespace TMS.ServiceLogic.Implementations
             var task = await _context.TaskItems
               .Include(t => t.CreatedBy)
               .Include(t => t.AssignedTo)
-              .FirstOrDefaultAsync(t => t.Id == request.TaskId && !t.IsDeleted);
+              .FirstOrDefaultAsync(t => t.Id == request.TaskId );
 
             
 
@@ -170,7 +183,7 @@ namespace TMS.ServiceLogic.Implementations
         {
             //  Find the task and ensure we don't try to delete something already deleted
             var task = await _context.TaskItems
-                .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+                .FirstOrDefaultAsync(t => t.Id == id );
 
             if (task == null) return "NotFound";
 

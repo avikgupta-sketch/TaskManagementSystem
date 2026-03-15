@@ -30,16 +30,21 @@ namespace TMS.WebAPI.Controllers
         public async Task<IActionResult> Create([FromBody] CreateTaskRequest request)
         {
             // Extract Admin ID from JWT Claim
-            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            var result = await _taskService.CreateTaskAsync(request, adminId);
-
-            if (result == null)
+            try
             {
-                return BadRequest("The user you are trying to assign this task to does not exist.");
+                var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                var result = await _taskService.CreateTaskAsync(request, adminId);
+                var response = _mapper.Map<TaskResponse>(result);
+                return Ok(response);
             }
-            var response = _mapper.Map<TaskResponse>(result);
-            return Ok(response);
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            
+           
+           
         }
 
 
@@ -47,13 +52,16 @@ namespace TMS.WebAPI.Controllers
         [Authorize(Roles = "Admin")] // Only Admins can assign
         public async Task<IActionResult> Assign([FromBody] AssignTaskRequest request)
         {
-            var result=await _taskService.AssignTaskAsync(request);
+            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var result=await _taskService.AssignTaskAsync(request,adminId);
             return result switch
             {
                 "Success" => Ok(new { message = "Task assigned successfully." }),
                 "AlreadyAssigned" => Conflict(new { message = "Task is already assigned to the user." }),
+                "CanOnlyAssignUser"=>Conflict(new {message="You can only assign task to user."}),
                 "TaskNotFound" => NotFound(new { message = "Task  not found." }),
-                "UserNotFound" => NotFound(new { message = "Task  not found." }),
+                "UserNotFound" => NotFound(new { message = "User  not found." }),
+                "Forbidden" => StatusCode(403, new { message = "Access Denied: You can only delete tasks created by you." }),
                 _ => BadRequest(new {message="Error! Try again later"})
 
             };
@@ -126,7 +134,6 @@ namespace TMS.WebAPI.Controllers
             
         {
            
-            
             
             var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
