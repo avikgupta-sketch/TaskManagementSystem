@@ -22,22 +22,34 @@ namespace TMS.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetComments(int taskId)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-            var comments = await _commentService.GetCommentsByTaskAsync(taskId, userId, role);
-            return Ok(comments);
+                var comments = await _commentService.GetCommentsByTaskAsync(taskId, userId, role);
+                return Ok(comments);
+            }
+            catch (Exception ex) {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
 
         [HttpPost]
         public async Task<IActionResult> AddComment(int taskId, [FromBody] CreateCommentRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-            var comment = await _commentService.AddCommentAsync(taskId, request, userId, role);
-            return Ok(comment);
+                var comment = await _commentService.AddCommentAsync(taskId, request, userId, role);
+                return Ok(comment);
+            }
+            catch (Exception ex) { 
+                return BadRequest(new {message=ex.Message});
+            }
         }
 
         [HttpPatch]
@@ -45,7 +57,7 @@ namespace TMS.API.Controllers
          [FromRoute] int taskId,
          [FromBody] UpdateCommentRequest request)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             // We pass the taskId from the route and the whole DTO from the body
             var result = await _commentService.UpdateCommentAsync(taskId, request, userId);
@@ -61,13 +73,13 @@ namespace TMS.API.Controllers
             return Ok(result);
         }
 
-        // Route is inherited from [Route("api/tasks/{taskId}/comments")] at class level
+        
         [HttpDelete]
         public async Task<IActionResult> DeleteComment(
             [FromRoute] int taskId,
             [FromBody] DeleteCommentRequest request)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var result = await _commentService.DeleteCommentAsync(taskId, request, userId);
 

@@ -1,11 +1,13 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using System.Text.Json.Serialization;
 using TMS.Model.Data;
-using TMS.ServiceLogic.Implementation;
 using TMS.ServiceLogic.Implementations;
 using TMS.ServiceLogic.Interface;
 using TMS.ServiceLogic.Mappings;
-using TMS.WebAPI.Extensions;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -45,9 +47,26 @@ builder.Services.AddSwaggerGen(options =>
         }
     });
 });
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:Key"]!))
+        };
+    });
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("TaskManagementConnectionString")));
-builder.Services.AddAuthServices(builder.Configuration);
+
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddAutoMapper(typeof(MappingProfile));

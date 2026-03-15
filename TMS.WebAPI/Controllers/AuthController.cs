@@ -24,18 +24,12 @@ namespace TMS.WebAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-           
-            
-                var callerRole = User.FindFirstValue(ClaimTypes.Role);
-                if (callerRole != "SuperAdmin")
-                    return StatusCode(403, new { message = "Only SuperAdmin can create Admin accounts." });
-            
             var result = await _authService.RegisterAsync(request);
             return result switch
             {
                 "Success" => Ok(new { message = "User registered Successfully." }),
                 "AlreadyRegistered" => Conflict(new { message = "Email already registered. Login" }),
-                _ => BadRequest()
+                _ => BadRequest(new {message ="Error! Try again later"})
 
             };
         }
@@ -48,7 +42,7 @@ namespace TMS.WebAPI.Controllers
                 return Conflict(new { message = "Invalid Email or password" });
             return Ok(result);
         }
-
+        [Authorize(Roles = "SuperAdmin")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteUser(int id)
         {
@@ -58,7 +52,7 @@ namespace TMS.WebAPI.Controllers
             {
                 "Success" => Ok(new { message = "User successfully deleted." }),
                 "User not found" => NotFound(new { message = result }),
-                _ => BadRequest(new { message = result }) // Handles business rule violations
+                _ => BadRequest(new { message = result }) 
             };
         }
     }
