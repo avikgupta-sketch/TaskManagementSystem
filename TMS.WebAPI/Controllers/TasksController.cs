@@ -26,11 +26,11 @@ namespace TMS.WebAPI.Controllers
         }
 
         [HttpPost("create")]
-        [Authorize(Roles = "Admin")] // Only Admins can create
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> Create([FromBody] CreateTaskRequest request)
         {
             // Extract Admin ID from JWT Claim
-            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var result = await _taskService.CreateTaskAsync(request, adminId);
 
@@ -51,9 +51,10 @@ namespace TMS.WebAPI.Controllers
             return result switch
             {
                 "Success" => Ok(new { message = "Task assigned successfully." }),
-                "AlreadyAssigned" => Conflict(new { message = "Task is already assigned to this user." }),
-                "NotFound" => NotFound(new { message = "Task or User not found." }),
-                _ => BadRequest()
+                "AlreadyAssigned" => Conflict(new { message = "Task is already assigned to the user." }),
+                "TaskNotFound" => NotFound(new { message = "Task  not found." }),
+                "UserNotFound" => NotFound(new { message = "Task  not found." }),
+                _ => BadRequest(new {message="Error! Try again later"})
 
             };
            
@@ -61,8 +62,8 @@ namespace TMS.WebAPI.Controllers
         [HttpGet("view")]
         public async Task<IActionResult> GetAll()
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var role = User.FindFirstValue(ClaimTypes.Role)!;
 
             var tasks = await _taskService.GetAllTasksAsync(userId, role);
             return Ok(tasks);
@@ -72,40 +73,51 @@ namespace TMS.WebAPI.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
-            var role = User.FindFirst(ClaimTypes.Role)!.Value;
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+                var role = User.FindFirst(ClaimTypes.Role)!.Value;
 
-            var task = await _taskService.GetTaskByIdAsync(id, userId, role);
-            return Ok(task);
+                var task = await _taskService.GetTaskByIdAsync(id, userId, role);
+                return Ok(task);
+            }
+            catch (Exception ex) {
+                return BadRequest(new { message = ex.Message }); 
+            }
         }
 
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskRequest request)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            try
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-            var task = await _taskService.UpdateTaskAsync(id, request, userId);
-            return Ok(task);
+                var task = await _taskService.UpdateTaskAsync(id, request, userId);
+                return Ok(task);
+            }
+            catch (Exception ex) { 
+            return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPatch("status")]
         public async Task<IActionResult> UpdateStatus([FromBody] UpdateTaskStatusRequest request)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var role = User.FindFirstValue(ClaimTypes.Role);
+            try
+            {
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+                var role = User.FindFirstValue(ClaimTypes.Role)!;
 
-            var result = await _taskService.UpdateTaskStatusAsync(request, userId, role);
+                var result = await _taskService.UpdateTaskStatusAsync(request, userId, role);
 
+                return Ok(result);
+            }
+            catch (Exception ex) {
+                return BadRequest(new { message = ex.Message });
 
-            if (result == null)
-                return StatusCode(403, new
-                {
-                    message = "Access Denied: You can only update status for tasks you created (Admin) or tasks assigned to you (User)."
-                });
-
-
-            return Ok(result);
+            }
         }
 
         [HttpDelete("{id}")]
@@ -113,10 +125,10 @@ namespace TMS.WebAPI.Controllers
         public async Task<IActionResult> DeleteTask(int id)
             
         {
-            // Extract the ID of the Admin currently logged in
+           
             
             
-            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var adminId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var result = await _taskService.DeleteTaskAsync(id, adminId);
 

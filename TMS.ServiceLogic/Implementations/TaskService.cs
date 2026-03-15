@@ -25,7 +25,7 @@ namespace TMS.ServiceLogic.Implementations
             _mapper = mapper;
         }
 
-        public async Task<TaskItem> CreateTaskAsync(CreateTaskRequest request, int adminId)
+        public async Task<TaskItem?> CreateTaskAsync(CreateTaskRequest request, int adminId)
         {
             if (request.AssignedToUserId.HasValue)
             {
@@ -58,8 +58,9 @@ namespace TMS.ServiceLogic.Implementations
             var task = await _context.TaskItems.FindAsync(request.TaskId);
             var userExists = await _context.Users.AnyAsync(u => u.Id == request.UserId);
 
-            if (task == null || !userExists) return "Task Not found";
-            if (task.AssignedToUserId == request.UserId) return "AlreadyAssigned";
+            if (task == null ) return "TaskNotFound";
+            if (!userExists) return "UserNotFound";
+            if (task.AssignedToUserId != null) return "AlreadyAssigned";
 
 
             task.AssignedToUserId = request.UserId;
@@ -149,11 +150,13 @@ namespace TMS.ServiceLogic.Implementations
             // Authorization logic stays the same but uses the DTO/Context
             if (userRole == "Admin")
             {
-                if (task.CreatedByUserId != userId) return null; // Or throw custom exception
+                if (task.CreatedByUserId != userId) 
+                    throw new Exception("The task is not created by you."); 
             }
             else
             {
-                if (task.AssignedToUserId != userId) return null;
+                if (task.AssignedToUserId != userId) 
+                    throw new Exception("This task is not assigned to you.");
             }
 
             task.Status = request.Status;
@@ -165,13 +168,13 @@ namespace TMS.ServiceLogic.Implementations
 
         public async Task<string> DeleteTaskAsync(int id, int adminId)
         {
-            // 1. Find the task (Ensure we don't try to delete something already deleted)
+            //  Find the task and ensure we don't try to delete something already deleted
             var task = await _context.TaskItems
                 .FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
 
             if (task == null) return "NotFound";
 
-            // 2. Ownership Check
+            //  Ownership Check
             if (task.CreatedByUserId != adminId) return "Forbidden";
 
             if (task.Status == TMS.Model.Enums.TaskStatus.InProgress) return "InProgress";
@@ -179,10 +182,10 @@ namespace TMS.ServiceLogic.Implementations
             if (task.Status == TMS.Model.Enums.TaskStatus.Done) return "Completed";
 
 
-            // 3. Soft Delete: Just update the property
+            
             task.IsDeleted = true;
 
-            // 4. Save changes (EF generates an UPDATE command instead of a DELETE)
+            
             await _context.SaveChangesAsync();
 
             return "Success";

@@ -9,22 +9,15 @@ namespace TMS.ServiceLogic.Mappings
     {
         public MappingProfile()
         {
-            // RegisterRequestDto  to User
             CreateMap<RegisterRequest, User>()
              .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
              
-
-
-
-            // User to AuthResponseDto
             CreateMap<User, AuthResponse>()
                 .ForMember(dest => dest.Role,
                 opt => opt.MapFrom(src => src.Role.ToString()));
 
 
-
             CreateMap<CreateTaskRequest, TaskItem>();
-
 
 
             CreateMap<TaskItem, TaskResponse>()

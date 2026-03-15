@@ -70,15 +70,15 @@ namespace TMS.ServiceLogic.Implementations
 
             if (user == null) return "User not found";
 
-            // Condition 1: Check In-Progress tasks for any user
-            // We check AssignedTasks that are NOT deleted and are InProgress
+            //  Check InProgress tasks for any user and assigned task in progress or deleted
+            
             bool hasInProgressTasks = user.AssignedTasks
                 .Any(t => !t.IsDeleted && t.Status == TMS.Model.Enums.TaskStatus.InProgress);
 
             if (hasInProgressTasks)
                 return "Cannot delete user: They have tasks currently 'In Progress'.";
 
-            // Condition 2: Admin specific rule
+            //  Admin specific rule
             if (user.Role == UserRole.Admin)
             {
                 // Check if they created any tasks that aren't deleted
@@ -88,7 +88,7 @@ namespace TMS.ServiceLogic.Implementations
             }
 
 
-            // SOFT DELETE happens here
+           
             user.IsDeleted = true;
 
             _context.Users.Update(user);

@@ -11,7 +11,7 @@ using AutoMapper;
 using TMS.Model.Data;
 using TMS.ServiceLogic.Interface;
 
-namespace TMS.ServiceLogic.Implementation
+namespace TMS.ServiceLogic.Implementations
 {
     public class CommentService : ICommentService
     {
@@ -104,7 +104,7 @@ namespace TMS.ServiceLogic.Implementation
                 return null;
             }
 
-            // 3. Update the message
+            //  Update the message
             comment.Message = request.Message;
 
             await _context.SaveChangesAsync();
@@ -114,19 +114,19 @@ namespace TMS.ServiceLogic.Implementation
 
         public async Task<string> DeleteCommentAsync(int taskId, DeleteCommentRequest request, int userId)
         {
-            // 1. Fetch the comment (only if not already soft-deleted)
+            //  Fetch the comment only if not already soft deleted
             var comment = await _context.Comments
                 .FirstOrDefaultAsync(c => c.Id == request.CommentId && !c.IsDeleted);
 
             if (comment == null) return "NotFound";
 
-            // 2. Logic Check: Does this comment belong to the taskId in the URL?
+            //  Logic Check: Does this comment belong to the taskId in the URL
             if (comment.TaskItemId != taskId) return "Forbidden";
 
-            // 3. Security Check: Did this user create the comment?
+            //  Security Check: Did this user create the comment?
             if (comment.UserId != userId) return "Forbidden";
 
-            // 4. Soft Delete
+            
             comment.IsDeleted = true;
 
             await _context.SaveChangesAsync();
