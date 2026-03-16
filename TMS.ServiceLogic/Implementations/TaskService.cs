@@ -27,6 +27,7 @@ namespace TMS.ServiceLogic.Implementations
         }
 
         public async Task<TaskItem?> CreateTaskAsync(CreateTaskRequest request, int adminId)
+
         {
             if (request.AssignedToUserId.HasValue)
             {
@@ -41,6 +42,14 @@ namespace TMS.ServiceLogic.Implementations
                     throw new Exception("Tasks can only be assigned to user.");
 
             }
+            bool isDuplicate = await _context.TaskItems.AnyAsync(t =>
+            t.Title == request.Title &&
+            t.AssignedToUserId == request.AssignedToUserId &&
+            t.CreatedByUserId == adminId && 
+        !      t.IsDeleted);
+
+            if (isDuplicate)
+                throw new Exception("You have already created a task with this title for this user.");
 
             var newTask = _mapper.Map<TaskItem>(request);
             newTask.CreatedByUserId = adminId;
