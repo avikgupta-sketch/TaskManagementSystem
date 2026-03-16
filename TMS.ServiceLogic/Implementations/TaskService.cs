@@ -12,6 +12,7 @@ using TMS.Model.Data;
 using TMS.Model.Entities;
 using TMS.Model.Enums;
 using TMS.ServiceLogic.Interface;
+using static TMS.Model.Exceptions.Exceptions;
 
 namespace TMS.ServiceLogic.Implementations
 {
@@ -36,20 +37,20 @@ namespace TMS.ServiceLogic.Implementations
                 
 
                 if (assignedUser==null)
-                    throw new Exception("Assigned user not found.");
+                    throw new NotFoundException("Assigned user not found.");
 
                 if (assignedUser.Role != UserRole.User)
-                    throw new Exception("Tasks can only be assigned to user.");
+                    throw new ValidationException("Tasks can only be assigned to user.");
 
             }
             bool isDuplicate = await _context.TaskItems.AnyAsync(t =>
             t.Title == request.Title &&
             t.AssignedToUserId == request.AssignedToUserId &&
             t.CreatedByUserId == adminId && 
-        !      t.IsDeleted);
+            !t.IsDeleted);
 
             if (isDuplicate)
-                throw new Exception("You have already created a task with this title for this user.");
+                throw new DuplicateTaskException("You have already created a task with this title.");
 
             var newTask = _mapper.Map<TaskItem>(request);
             newTask.CreatedByUserId = adminId;
@@ -67,24 +68,24 @@ namespace TMS.ServiceLogic.Implementations
             return savedTask;
         }
 
-        public async Task<string> AssignTaskAsync(AssignTaskRequest request, int adminId)
+        public async Task<bool> AssignTaskAsync(AssignTaskRequest request, int adminId)
         {
 
             var task = await _context.TaskItems.FindAsync(request.TaskId);
             var AssignedUser = await _context.Users.FirstOrDefaultAsync(u => u.Id == request.UserId);
             
 
-            if (task == null ) return "TaskNotFound";
-            if (AssignedUser==null) return "UserNotFound";
-            if (AssignedUser.Role != UserRole.User) return "CanOnlyAssignUser";
-            
-            if (task.CreatedByUserId != adminId) return "Forbidden";
-            if (task.AssignedToUserId != null) return "AlreadyAssigned";
+            if (task == null ) throw new NotFoundException("Task not found.");
+            if (AssignedUser==null) throw new NotFoundException("User not found.");
+            if (AssignedUser.Role != UserRole.User) throw new ValidationException("Tasks can only be assigned to the 'User' role.");
+
+            if (task.CreatedByUserId != adminId) throw new ValidationException("Access Denied: You can only assign tasks created by you.");
+            if (task.AssignedToUserId != null) throw new DuplicateTaskException("This task is already assigned to a user.");
 
 
             task.AssignedToUserId = request.UserId;
             await _context.SaveChangesAsync();
-            return "Success";
+            return true;
         }
         public async Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role)
         {
@@ -110,11 +111,11 @@ namespace TMS.ServiceLogic.Implementations
                  .FirstOrDefaultAsync(t => t.Id == taskId && !t.IsDeleted); 
 
             if (task == null)
-                throw new Exception("Task not found");
+                throw new NotFoundException("Task not found.");
 
             // User can only see their assigned task
             if (role == "User" && task.AssignedToUserId != userId)
-                throw new Exception("You are not authorized to view this task");
+                throw new ForbiddenException("You are not authorized to view this task.");
 
             return _mapper.Map<TaskResponse>(task);
         }
@@ -127,21 +128,19 @@ namespace TMS.ServiceLogic.Implementations
 
             // Task not found
             if (task == null)
-                throw new Exception("Task not found");
+                throw new NotFoundException("Task not found.");
 
-            // Ownership check — only creator admin can update 
             if (task.CreatedByUserId != userId)
-                throw new Exception("You can only update tasks you created");
+                throw new ForbiddenException("You can only update tasks you created.");
 
-            // Check if new AssignedToUserId exists
             if (request.AssignedToUserId.HasValue)
             {
                 var AssignedUser = await _context.Users
                     .FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId.Value);
                 if (AssignedUser==null)
-                    throw new Exception("Assigned user not found");
+                    throw new NotFoundException("The user you are trying to assign was not found.");
                 if (AssignedUser.Role != UserRole.User)
-                    throw new Exception("Task can only be assigned to user.");
+                    throw new ValidationException("Tasks can only be assigned to users.");
             }
 
             // Map only updated fields
@@ -167,50 +166,47 @@ namespace TMS.ServiceLogic.Implementations
 
             
 
-            if (task == null) return null;
+            if (task == null) throw new NotFoundException("Task not found.");
 
-            // Authorization logic stays the same but uses the DTO/Context
             if (userRole == "Admin")
             {
                 if (task.CreatedByUserId != userId) 
-                    throw new Exception("The task is not created by you."); 
+                    throw new ForbiddenException("You cannot update the status of a task you did not create.");
             }
             else
             {
                 if (task.AssignedToUserId != userId) 
-                    throw new Exception("This task is not assigned to you.");
+                    throw new ForbiddenException("You cannot update the status of a task not assigned to you.");
             }
 
             task.Status = request.Status;
             await _context.SaveChangesAsync();
-
-            // Return a Response DTO instead of a string
+           
             return _mapper.Map<TaskResponse>(task);
         }
 
-        public async Task<string> DeleteTaskAsync(int id, int adminId)
+        public async Task<bool> DeleteTaskAsync(int id, int adminId)
         {
-            //  Find the task and ensure we don't try to delete something already deleted
             var task = await _context.TaskItems
                 .FirstOrDefaultAsync(t => t.Id == id );
 
-            if (task == null) return "NotFound";
+            if (task == null) throw new NotFoundException("Task not found.");
 
             //  Ownership Check
-            if (task.CreatedByUserId != adminId) return "Forbidden";
+            if (task.CreatedByUserId != adminId) throw new ForbiddenException("Access Denied: You can only delete tasks created by you.");
 
-            if (task.Status == TMS.Model.Enums.TaskStatus.InProgress) return "InProgress";
+            if (task.Status == TMS.Model.Enums.TaskStatus.InProgress) throw new ValidationException("Task cannot be deleted because it is currently in progress.");
 
-            if (task.Status == TMS.Model.Enums.TaskStatus.Done) return "Completed";
+            if (task.Status == TMS.Model.Enums.TaskStatus.Done) throw new ValidationException("Task cannot be deleted because it is already completed.");
 
 
-            
+
             task.IsDeleted = true;
 
             
             await _context.SaveChangesAsync();
 
-            return "Success";
+            return true;
         }
     }
 }

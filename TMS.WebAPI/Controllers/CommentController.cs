@@ -5,6 +5,7 @@ using TMS.Contracts.Request;
 using TMS.Contracts.Response;
 using TMS.ServiceLogic.Implementations;
 using TMS.ServiceLogic.Interface;
+using static TMS.Model.Exceptions.Exceptions;
 
 namespace TMS.API.Controllers
 {
@@ -30,8 +31,17 @@ namespace TMS.API.Controllers
                 var comments = await _commentService.GetCommentsByTaskAsync(taskId, userId, role);
                 return Ok(comments);
             }
-            catch (Exception ex) {
-                return BadRequest(new { message = ex.Message });
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); // 404
+            }
+            catch (ForbiddenException ex)
+            {
+                return StatusCode(403, new { message = ex.Message }); // 403
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while fetching comments." });
             }
         }
 
@@ -47,8 +57,17 @@ namespace TMS.API.Controllers
                 var comment = await _commentService.AddCommentAsync(taskId, request, userId, role);
                 return Ok(comment);
             }
-            catch (Exception ex) { 
-                return BadRequest(new {message=ex.Message});
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); // 404
+            }
+            catch (ForbiddenException ex)
+            {
+                return StatusCode(403, new { message = ex.Message }); // 403
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while adding the comment." });
             }
         }
 
@@ -61,23 +80,22 @@ namespace TMS.API.Controllers
             try
             {
                 var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-                // We pass the taskId from the route and the whole DTO from the body
+               
                 var result = await _commentService.UpdateCommentAsync(taskId, request, userId);
-
-                if (result == null)
-                {
-                    return StatusCode(403, new
-                    {
-                        message = "Access Denied: You are not the author."
-                    });
-                }
 
                 return Ok(result);
             }
-            catch (Exception ex)
+            catch (NotFoundException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                return NotFound(new { message = ex.Message }); // 404
+            }
+            catch (ForbiddenException ex)
+            {
+                return StatusCode(403, new { message = ex.Message }); // 403
+            }
+            catch (Exception ex)
+            {               
+                return StatusCode(500, new { message = "An error occurred while updating the comment." });
             }
         }
 
@@ -87,17 +105,26 @@ namespace TMS.API.Controllers
             [FromRoute] int taskId,
             [FromBody] DeleteCommentRequest request)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-            var result = await _commentService.DeleteCommentAsync(taskId, request, userId);
-
-            return result switch
+            try
             {
-                "Success" => Ok(new { message = "Comment deleted successfully (Soft Delete)." }),
-                "Forbidden" => StatusCode(403, new { message = "Access Denied: You cannot delete this comment." }),
-                "NotFound" => NotFound(new { message = "Comment not found or already deleted." }),
-                _ => BadRequest()
-            };
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+                await _commentService.DeleteCommentAsync(taskId, request, userId);
+
+                return Ok(new { message = "Comment deleted successfully." });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); // 404
+            }
+            catch (ForbiddenException ex)
+            {
+                return StatusCode(403, new { message = ex.Message }); // 403
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred during comment deletion." });
+            }
         }
     }
 }

@@ -10,9 +10,10 @@ namespace TMS.ServiceLogic.Interface
 {
     public interface IAuthService
     {
-        Task<string> RegisterAsync(RegisterRequest request);
+        Task<bool> RegisterAsync(RegisterRequest request);
+
         Task<AuthResponse?> LoginAsync(LoginRequest request);
 
-        Task<string> DeleteUserAsync(int userId);
+        Task<bool> DeleteUserAsync(int userId);
     }
 }

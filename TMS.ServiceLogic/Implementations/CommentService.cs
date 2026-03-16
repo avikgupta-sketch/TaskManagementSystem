@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,10 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using TMS.Contracts.Request;
 using TMS.Contracts.Response;
-using TMS.Model.Entities;
-using AutoMapper;
 using TMS.Model.Data;
+using TMS.Model.Entities;
 using TMS.ServiceLogic.Interface;
+using static TMS.Model.Exceptions.Exceptions;
 
 namespace TMS.ServiceLogic.Implementations
 {
@@ -31,16 +32,16 @@ namespace TMS.ServiceLogic.Implementations
                 .FirstOrDefaultAsync(t => t.Id == taskId );
 
             if (task == null)
-                throw new Exception("Task not found");
+                throw new NotFoundException("Task not found.");
 
-           
+
             if (role == "Admin" && task.CreatedByUserId != userId)
-                throw new Exception("You can only comment on tasks you created");
+                throw new ForbiddenException("You can only comment on tasks you created.");
 
             if (role == "User" && task.AssignedToUserId != userId)
-                throw new Exception("You can only comment on tasks assigned to you");
+                throw new ForbiddenException("You can only comment on tasks assigned to you.");
 
-            
+
             var comment = _mapper.Map<Comment>(request);  
             comment.UserId = userId;
             comment.TaskItemId = taskId;
@@ -63,11 +64,11 @@ namespace TMS.ServiceLogic.Implementations
 
             // Task not found
             if (task == null)
-                throw new Exception("Task not found");
+                throw new NotFoundException("Task not found.");
 
-            
+
             if (role == "User" && task.AssignedToUserId != userId)
-                throw new Exception("You are not authorized to view comments on this task");
+                throw new ForbiddenException("You are not authorized to view comments on this task.");
 
             var comments = await _context.Comments
                 .Include(c => c.Author)
@@ -86,25 +87,22 @@ namespace TMS.ServiceLogic.Implementations
 
             // Task not found
             if (task == null)
-                throw new Exception("Task not found");
-
-
-            // Fetch comment including the Author
+                throw new NotFoundException("Task not found.");
+           
             var comment = await _context.Comments
                 .Include(c => c.Author)
                 .FirstOrDefaultAsync(c => c.Id == request.CommentId );
 
             if(comment == null || comment.TaskItemId != taskId)
             {
-                throw new Exception("Comment not found");
+                throw new NotFoundException("Comment not found on this task.");
             }
 
             if (comment.UserId != userId)
             {
-                return null;
+                throw new ForbiddenException("Access Denied: You can only edit your own comments.");
             }
 
-            //  Update the message
             comment.Message = request.Message;
 
             await _context.SaveChangesAsync();
@@ -112,26 +110,30 @@ namespace TMS.ServiceLogic.Implementations
             return _mapper.Map<CommentResponse>(comment);
         }
 
-        public async Task<string> DeleteCommentAsync(int taskId, DeleteCommentRequest request, int userId)
+        public async Task<bool> DeleteCommentAsync(int taskId, DeleteCommentRequest request, int userId)
         {
-            //  Fetch the comment only if not already soft deleted
+            var task = await _context.TaskItems
+              .FirstOrDefaultAsync(t => t.Id == taskId);
+
+            if (task == null)
+                throw new NotFoundException("Task not found.");
+
+            
             var comment = await _context.Comments
                 .FirstOrDefaultAsync(c => c.Id == request.CommentId );
 
-            if (comment == null) return "NotFound";
+            if (comment == null) throw new NotFoundException("Comment not found.");
+           
+            if (comment.TaskItemId != taskId) throw new ForbiddenException("Access Denied: You cannot delete this comment.");
+          
+            if (comment.UserId != userId) throw new ForbiddenException("Access Denied: You cannot delete this comment.");
 
-            //  Logic Check: Does this comment belong to the taskId in the URL
-            if (comment.TaskItemId != taskId) return "Forbidden";
 
-            //  Security Check: Did this user create the comment?
-            if (comment.UserId != userId) return "Forbidden";
-
-            
             comment.IsDeleted = true;
 
             await _context.SaveChangesAsync();
 
-            return "Success";
+            return true;
         }
     }
 }
