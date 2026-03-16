@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using BC = BCrypt.Net.BCrypt;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -10,12 +9,14 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
-using TMS.Contracts.Response;
 using TMS.Contracts.Request;
+using TMS.Contracts.Response;
 using TMS.Model.Data;
 using TMS.Model.Entities;
 using TMS.Model.Enums;
 using TMS.ServiceLogic.Interface;
+using static TMS.Model.Exceptions.Exceptions;
+using BC = BCrypt.Net.BCrypt;
 
 namespace TMS.ServiceLogic.Implementations
 {
@@ -32,13 +33,13 @@ namespace TMS.ServiceLogic.Implementations
             _mapper = mapper;
         }
 
-        public async Task<string> RegisterAsync(RegisterRequest request)
+        public async Task<bool> RegisterAsync(RegisterRequest request)
         {
             // Check if email already exists
             if (await _context.Users.AnyAsync(u => u.Email == request.Email))
-                return "AlreadyRegistered";
+                throw new DuplicateTaskException("This email is already registered. Please login instead.");
 
-            // Mapping Username,Email from DTO to User
+           
             var user = _mapper.Map<User>(request);
             user.PasswordHash = BC.HashPassword(request.Password);
             
@@ -46,7 +47,7 @@ namespace TMS.ServiceLogic.Implementations
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            return "Success";
+            return true;
         }
 
         public async Task<AuthResponse?> LoginAsync(LoginRequest request)
@@ -61,40 +62,35 @@ namespace TMS.ServiceLogic.Implementations
             return GenerateToken(user);
         }
 
-        public async Task<string> DeleteUserAsync(int userId)
+        public async Task<bool> DeleteUserAsync(int userId)
         {
             var user = await _context.Users
                 .Include(u => u.AssignedTasks)
                 .Include(u => u.CreatedTasks)
                 .FirstOrDefaultAsync(u => u.Id == userId ); 
 
-            if (user == null) return "User not found";
+            if (user == null) throw new NotFoundException("User not found.");
+           
 
-            //  Check InProgress tasks for any user and assigned task in progress or deleted
-            
             bool hasInProgressTasks = user.AssignedTasks
                 .Any(t=>t.Status == TMS.Model.Enums.TaskStatus.InProgress);
 
             if (hasInProgressTasks)
-                return "Cannot delete user: They have tasks currently 'In Progress'.";
-
-            //  Admin specific rule
+                throw new ValidationException("Cannot delete user: They have tasks currently In Progress.");
+           
             if (user.Role == UserRole.Admin)
             {
-                // Check if they created any tasks that aren't deleted
                 bool hasActiveCreatedTasks = user.CreatedTasks.Any();
                 if (hasActiveCreatedTasks)
-                    return "Cannot delete Admin: This admin has active tasks in the system.";
+                    throw new ValidationException("Cannot delete Admin: This admin has active tasks in the system.");
             }
-
-
            
             user.IsDeleted = true;
 
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
-            return "Success";
+            return true;
         }
 
         private AuthResponse GenerateToken(User user)

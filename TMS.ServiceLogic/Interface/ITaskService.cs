@@ -13,13 +13,16 @@ namespace TMS.ServiceLogic.Interface
     {
         Task<TaskItem?> CreateTaskAsync(CreateTaskRequest request, int adminId);
 
-        Task<string> AssignTaskAsync(AssignTaskRequest request,int adminId);
+        Task<bool> AssignTaskAsync(AssignTaskRequest request,int adminId);
+
         Task<List<TaskResponse>> GetAllTasksAsync(int userId, string role);
+
         Task<TaskResponse> GetTaskByIdAsync(int taskId, int userId, string role);
+
         Task<TaskResponse> UpdateTaskAsync(int taskId, UpdateTaskRequest request, int userId);
 
         Task<TaskResponse?> UpdateTaskStatusAsync(UpdateTaskStatusRequest request, int userId, string userRole);
 
-        Task<string> DeleteTaskAsync(int id, int adminId);
+        Task<bool> DeleteTaskAsync(int id, int adminId);
     }
 }
