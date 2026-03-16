@@ -14,7 +14,7 @@ namespace TMS.Model.Migrations
             migrationBuilder.InsertData(
                 table: "Users",
                 columns: new[] { "Id", "CreatedAt", "Email", "IsDeleted", "PasswordHash", "Role", "Username" },
-                values: new object[] { 999999, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "gaurav@123", false, "$2a$11$Itq6CVnSGTQUia673H3D/uskekL97BqtnUgzqHahBqZ2cv66N9Uy.", "SuperAdmin", "Gaurav" });
+                values: new object[] { 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "gaurav@123", false, "$2a$11$Itq6CVnSGTQUia673H3D/uskekL97BqtnUgzqHahBqZ2cv66N9Uy.", "SuperAdmin", "Gaurav" });
         }
 
         /// <inheritdoc />
