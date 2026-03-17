@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,9 +11,15 @@ namespace TMS.Model.Entities
 {
     public class User : BaseEntity
     {
-        
+
+
+
+
+        [Required(ErrorMessage = "")]
         public string Username { get; set; } = string.Empty;
+
         public string Email { get; set; } = string.Empty;
+
         public string PasswordHash { get; set; } = string.Empty;
         public UserRole Role { get; set; } = UserRole.User;
         
@@ -20,7 +27,7 @@ namespace TMS.Model.Entities
         
 
         //Navigation
-        public ICollection<TaskItem> CreatedTasks { get; set; } = new List<TaskItem>();
+        public List<TaskItem> CreatedTasks { get; set; } = new List<TaskItem>();
         public ICollection<TaskItem> AssignedTasks { get; set; } = new List<TaskItem>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }

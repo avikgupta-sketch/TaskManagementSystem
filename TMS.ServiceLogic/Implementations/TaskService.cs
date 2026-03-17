@@ -33,7 +33,7 @@ namespace TMS.ServiceLogic.Implementations
             if (request.AssignedToUserId.HasValue)
             {
                 var assignedUser = await _context.Users
-           .FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId.Value);
+                .FirstOrDefaultAsync(u => u.Id == request.AssignedToUserId.Value);
                 
 
                 if (assignedUser==null)
