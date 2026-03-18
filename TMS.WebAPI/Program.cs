@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 using System.Text;
 using System.Text.Json.Serialization;
 using TMS.Model.Data;
@@ -11,6 +12,10 @@ using TMS.ServiceLogic.Mappings;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
+// resplace default logger with new logger, also give acces to environment, identification.
+builder.Host.UseSerilog((context, configuration) =>
+    configuration.ReadFrom.Configuration(context.Configuration));      //It tells Serilog: Go look at the appsettings.json file to find out where to save the logs.
 
 // Add services to the container.
 
@@ -73,6 +78,17 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 
 var app = builder.Build();
+
+// 3. Add the Request Logging Middleware
+// This captures the path, method, status code, and EXECUTION TIME (Elapsed)
+app.UseSerilogRequestLogging(options =>
+{
+    // This adds the "Endpoint" name to the log automatically
+    options.EnrichDiagnosticContext = (diagnosticContext, httpContext) =>
+    {
+        diagnosticContext.Set("EndpointName", httpContext.GetEndpoint()?.DisplayName);
+    };
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
